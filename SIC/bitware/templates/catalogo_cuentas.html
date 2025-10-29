@@ -1,0 +1,128 @@
+{% extends 'base_site.html' %}
+
+{% block title %}Transacciones - Bitware{% endblock %}
+
+{% block content %}
+<div class="titulo-centro"><h1>Catálogo de Cuentas</h1><br></div>
+
+
+<!-- 1. Tabla -->
+<div class="card">
+    <table class="accounts-table">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Cuenta</th>
+                <th>Tipo</th>
+                <th>¿Movimientos?</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in cuentas %}
+            <tr>
+                <td>{{ c.codigo_cuenta }}</td>
+                <td>{{ c.nombre_cuenta }}</td>
+                <td>{{ c.tipo }}</td>
+                <td>{{ c.permite_movimientos|yesno:"Sí,No" }}</td>
+                <td>
+                    <!-- Editar: abre el panel directamente -->
+                    <form method="get" action="." style="display:inline;">
+                        <input type="hidden" name="editar" value="{{ c.id_cuenta }}">
+                        <button class="btn-small">Editar</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align:center;">Sin cuentas registradas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<br><hr>
+
+<!-- 2. Check para CREAR (sólo aparece si NO estamos editando) -->
+{% if not cuenta_editar %}
+<div style="margin-top:1.5rem;">
+    <label>
+        <input type="checkbox" id="toggle-crear">
+        Crear nueva cuenta
+    </label>
+</div>
+{% endif %}
+ 
+<br>
+<!-- 3. Panel de formulario -->
+<div id="panel-cuenta" class="card {% if cuenta_editar %}visible{% endif %}">
+    <h2>{% if cuenta_editar %}Editar cuenta{% else %}Nueva cuenta{% endif %}</h2>
+
+    <form method="post" class="form-group">
+        {% csrf_token %}
+        {% if cuenta_editar %}
+        <input type="hidden" name="id_cuenta" value = "{{ cuenta_editar.id_cuenta }}">
+        {% endif %}
+
+        <label>Código
+            <input type="text" name="codigo_cuenta" value = "{{ cuenta_editar.codigo_cuenta|default:'' }}" required>
+        </label>
+
+        <label>Nombre
+            <input type="text" name="nombre_cuenta" value = "{{ cuenta_editar.nombre_cuenta|default:'' }}" required>
+        </label>
+
+        <label>Tipo
+            <select name="tipo"  required>
+                <option value=""></option>
+                <option value="Activo corriente"
+                    {% if cuenta_editar.tipo == "Activo corriente" %}selected{% endif %}>
+                    Activo corriente</option>
+                <option value="Activo no corriente"
+                    {% if cuenta_editar.tipo == "Activo no corriente" %}selected{% endif %}>
+                    Activo no corriente</option>
+                <option value="Pasivo corriente"
+                    {% if cuenta_editar.tipo == "Pasivo corriente" %}selected{% endif %}>
+                    Pasivo corriente</option>
+                <option value="Pasivo no corriente"
+                    {% if cuenta_editar.tipo == "Pasivo no corriente" %}selected{% endif %}>
+                    Pasivo no corriente</option>
+                <option value="Patrimonio"
+                    {% if cuenta_editar.tipo == "Patrimonio" %}selected{% endif %}>
+                    Patrimonio</option>
+                <option value="Ingreso"
+                    {% if cuenta_editar.tipo == "Ingreso" %}selected{% endif %}>
+                    Ingreso</option>
+                <option value="Gasto"
+                    {% if cuenta_editar.tipo == "Gasto" %}selected{% endif %}>
+                    Gasto</option>
+            </select>
+        </label>
+
+        <label>
+             Permite movimientos<input type="checkbox" name="permite_movimientos" value="True" {% if cuenta_editar.permite_movimientos %}checked{% endif %}>
+           
+        </label>
+
+        <button type="submit" class="btn">Guardar</button>
+         
+    </form>
+</div>
+
+
+<!-- 4. Micro-JS -->
+<script>
+    // Si estamos editando, el panel ya tiene la clase .visible
+    // Si no, sólo se muestra al marcar el check
+    const panel = document.getElementById('panel-cuenta');
+    const toggle = document.getElementById('toggle-crear');
+    if (toggle) {
+        toggle.addEventListener('change', () => {
+            panel.classList.toggle('visible', toggle.checked);
+        });
+    }
+</script>
+
+
+{% endblock %}

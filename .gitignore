@@ -1,0 +1,12 @@
+syntax: glob
+
+venv/
+entorno/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+.DS_Store
+*.egg-info/

@@ -1,0 +1,513 @@
+{% extends 'base_site.html' %}
+
+{% block title %}Transacciones - Bitware{% endblock %}
+
+{% block content %}
+<div class="titulo-centro"><h1>Registro de Transacciones</h1></div>
+
+<!-- Mensajes -->
+{% if messages %}
+<ul class="mensajes">
+    {% for message in messages %}
+    <li class="mensaje-{{ message.tags }} alerta-temporal">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<br><hr>
+
+<form id="transaccionForm" method="post">
+    {% csrf_token %}
+    
+    <!-- Encabezado de la transacción -->
+    <div class="form-row">
+        <div class="form-group">
+            <label for="fecha" class="titulo-centro">Fecha:</label>
+            <input type="date" id="fecha" name="fecha" required>
+        </div>
+        <div class="form-group">
+            <label for="concepto" class="titulo-centro">Concepto/Descripción:</label>
+            <input type="text" id="concepto" name="concepto" placeholder="Ej: Compra de materiales" required>
+        </div>
+        <div class="form-group">
+            <label for="numero_documento" class="titulo-centro">N° de documento:</label>
+            <input type="text" id="numero_documento" name="numero_documento" placeholder="Ej: FACT-001">
+        </div>
+    </div>
+
+    <br><hr>
+
+    <!-- Tabla de movimientos -->
+    <table id="movimientosTable" class="accounts-table">
+        <thead>
+            <tr>
+                <th>Tipo de Cuenta</th>
+                <th>Cuenta Contable</th>
+                <th>Monto</th>
+                <th>Debe</th>
+                <th>Haber</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Fila inicial -->
+             
+            <tr class="movimiento-row" data-index="0">
+                <td>
+                    <select name="tipo_estado[]" class="tipo_estado" required>
+                        <option value="">-- Todos --</option>
+                        {% for tipo in tipos_estado %}
+                        <option value="{{ tipo }}">{{ tipo }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+
+                    <select name="cuenta_contable[]" class="cuenta_contable" required>
+                        <option value="">-- Selecciona una cuenta --</option>
+                        {% for cuenta in cuentas_contables %}
+                        <option value="{{ cuenta.id_cuenta }}" data-tipo="{{ cuenta.tipo }}">
+                            {{ cuenta.codigo_cuenta }} - {{ cuenta.nombre_cuenta }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" name="monto[]" step="0.01" min="0" value="0.00" class="monto" required>
+                </td>
+                <td style="text-align: center;">
+                    <input type="checkbox" name="es_debe[]" value="0" class="es_debe" checked>
+                </td>
+                <td style="text-align: center;">
+                    <input type="checkbox" name="es_haber[]" value="0" class="es_haber">
+                </td>
+                <td>
+                    <button type="button" class="btn-small eliminarFila">Eliminar</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button type="button" id="agregarFila" class="btn-small">+ Agregar partida</button>
+
+    <br><br><hr>
+
+    <!-- Sección de IVA -->
+    <div class="iva-section">
+        <label>
+            <input type="checkbox" id="aplicaIva" name="aplica_iva"> Aplicar IVA ({{ tasa_iva|floatformat:2 }}%)
+        </label>
+        
+        <div id="ivaDetails" style="display:none; margin-top:15px;">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="cuenta_base_iva">Aplicar IVA a la cuenta:</label>
+                    <select id="cuenta_base_iva" name="cuenta_base_iva">
+                        <option value="">-- Selecciona una cuenta de arriba --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tipo_iva">Tipo de IVA:</label>
+                    <select id="tipo_iva" name="tipo_iva">
+                        <option value="">-- Selecciona --</option>
+                        <option value="credito">IVA Crédito Fiscal</option>
+                        <option value="debito">IVA Débito Fiscal</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cuenta_iva">Cuenta IVA:</label>
+                    <select id="cuenta_iva" name="cuenta_iva">
+                        <option value="">-- Selecciona --</option>
+                        {% if cuenta_iva_credito %}
+                        <option value="{{ cuenta_iva_credito.id_cuenta }}" data-tipo="credito">
+                            {{ cuenta_iva_credito.codigo_cuenta }} - {{ cuenta_iva_credito.nombre_cuenta }}
+                        </option>
+                        {% endif %}
+                        {% if cuenta_iva_debito %}
+                        <option value="{{ cuenta_iva_debito.id_cuenta }}" data-tipo="debito">
+                            {{ cuenta_iva_debito.codigo_cuenta }} - {{ cuenta_iva_debito.nombre_cuenta }}
+                        </option>
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="monto_iva">Monto IVA:</label>
+                    <input type="number" id="monto_iva" name="monto_iva" step="0.01" value="0.00" readonly>
+                </div>
+                <div class="form-group">
+                    <label>IVA es:</label>
+                    <div style="display: flex; gap: 20px; align-items: center; margin-top: 8px;">
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="radio" name="iva_tipo_movimiento" value="debe" id="iva_debe" checked>
+                            Debe
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 5px;">
+                            <input type="radio" name="iva_tipo_movimiento" value="haber" id="iva_haber">
+                            Haber
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <br><hr>
+
+    <!-- Resumen de movimientos -->
+    <div class="resumen">
+        <h3 class="titulo-centro">Resumen de Movimientos</h3>
+        <table class="accounts-table" style="max-width: 600px; margin: 20px auto;">
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th style="text-align: right;">Debe</th>
+                    <th style="text-align: right;">Haber</th>
+                </tr>
+            </thead>
+            <tbody id="resumenBody">
+                <tr>
+                    <td colspan="3" style="text-align: center; color: #b3b3b3;">
+                        Agregue partidas para ver el resumen
+                    </td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr style="font-weight: bold; background: rgba(74, 222, 128, 0.1);">
+                    <td>TOTALES:</td>
+                    <td style="text-align: right; color: #4ade80;">$<span id="total_debe">0.00</span></td>
+                    <td style="text-align: right; color: #4ade80;">$<span id="total_haber">0.00</span></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div id="balance-status" class="balance-ok" style="text-align: center; margin-top: 10px;">
+            ✅ Los totales cuadran.
+        </div>
+    </div>
+
+    <br>
+
+    <!-- Botones de acción -->
+    <div class="form-actions" style="text-align: center;">
+        <button type="submit" id="registrarBtn" class="btn btn-primary" disabled>Registrar transacción</button>
+        <button type="button" id="cancelarBtn" class="btn btn-secondary">Cancelar</button>
+    </div>
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tablaBody = document.getElementById('movimientosTable').getElementsByTagName('tbody')[0];
+    const resumenBody = document.getElementById('resumenBody');
+    const agregarBtn = document.getElementById('agregarFila');
+    const aplicaIvaCheckbox = document.getElementById('aplicaIva');
+    const ivaDetails = document.getElementById('ivaDetails');
+    const cuentaBaseIvaSelect = document.getElementById('cuenta_base_iva');
+    const tipoIvaSelect = document.getElementById('tipo_iva');
+    const cuentaIvaSelect = document.getElementById('cuenta_iva');
+    const montoIvaInput = document.getElementById('monto_iva');
+    const ivaDebeRadio = document.getElementById('iva_debe');
+    const ivaHaberRadio = document.getElementById('iva_haber');
+    const totalDebeSpan = document.getElementById('total_debe');
+    const totalHaberSpan = document.getElementById('total_haber');
+    const balanceStatus = document.getElementById('balance-status');
+    const registrarBtn = document.getElementById('registrarBtn');
+    const cancelarBtn = document.getElementById('cancelarBtn');
+
+    const tasaIva = parseFloat('{{ tasa_iva|default:"0" }}') || 0;
+    let contadorFilas = 0;
+
+    // Actualizar opciones del select de cuenta base IVA
+    function actualizarOpcionesCuentaBaseIva() {
+        cuentaBaseIvaSelect.innerHTML = '<option value="">-- Selecciona una cuenta de arriba --</option>';
+        
+        const filas = tablaBody.querySelectorAll('.movimiento-row');
+        filas.forEach((fila, index) => {
+            const cuentaSelect = fila.querySelector('.cuenta_contable');
+            const montoInput = fila.querySelector('.monto');
+            const monto = parseFloat(montoInput.value) || 0;
+            
+            if (cuentaSelect.value && monto > 0) {
+                const cuentaNombre = cuentaSelect.options[cuentaSelect.selectedIndex].text;
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${cuentaNombre} ($${monto.toFixed(2)})`;
+                cuentaBaseIvaSelect.appendChild(option);
+            }
+        });
+    }
+
+    // Bind eventos a una fila
+    function bindFilaEvents(fila, index) {
+        fila.setAttribute('data-index', index);
+        const tipoEstadoSelect = fila.querySelector('.tipo_estado');
+        const cuentaContableSelect = fila.querySelector('.cuenta_contable');
+        const montoInput = fila.querySelector('.monto');
+        const esDebe = fila.querySelector('.es_debe');
+        const esHaber = fila.querySelector('.es_haber');
+        const eliminarBtn = fila.querySelector('.eliminarFila');
+
+        // Actualizar el value de los checkboxes con el índice
+        esDebe.value = index;
+        esHaber.value = index;
+
+        // Filtrar cuentas por tipo
+        tipoEstadoSelect.addEventListener('change', function() {
+            const tipoSeleccionado = this.value;
+            const opciones = cuentaContableSelect.querySelectorAll('option');
+            
+            opciones.forEach(opcion => {
+                if (opcion.value === '') {
+                    opcion.style.display = 'block';
+                    return;
+                }
+                const tipoCuenta = opcion.getAttribute('data-tipo');
+                if (!tipoSeleccionado || tipoCuenta === tipoSeleccionado) {
+                    opcion.style.display = 'block';
+                } else {
+                    opcion.style.display = 'none';
+                }
+            });
+            
+            // Reset selección si ya no es válida
+            const opcionActual = cuentaContableSelect.querySelector(`option[value="${cuentaContableSelect.value}"]`);
+            if (opcionActual && opcionActual.style.display === 'none') {
+                cuentaContableSelect.value = '';
+            }
+        });
+
+        // Actualizar totales cuando cambie
+        montoInput.addEventListener('input', function() {
+            actualizarOpcionesCuentaBaseIva();
+            actualizarTotales();
+        });
+        
+        cuentaContableSelect.addEventListener('change', function() {
+            actualizarOpcionesCuentaBaseIva();
+            actualizarTotales();
+        });
+
+        // Hacer que Debe/Haber sean mutuamente excluyentes
+        esDebe.addEventListener('change', function() {
+            if (this.checked) {
+                esHaber.checked = false;
+            } else if (!esHaber.checked) {
+                this.checked = true;
+            }
+            actualizarTotales();
+        });
+
+        esHaber.addEventListener('change', function() {
+            if (this.checked) {
+                esDebe.checked = false;
+            } else if (!esDebe.checked) {
+                this.checked = true;
+            }
+            actualizarTotales();
+        });
+
+        // Eliminar fila
+        eliminarBtn.addEventListener('click', function() {
+            if (tablaBody.rows.length <= 1) {
+                fila.querySelector('.monto').value = '0.00';
+                fila.querySelector('.tipo_estado').selectedIndex = 0;
+                fila.querySelector('.cuenta_contable').selectedIndex = 0;
+                fila.querySelector('.es_debe').checked = true;
+                fila.querySelector('.es_haber').checked = false;
+            } else {
+                fila.remove();
+            }
+            actualizarOpcionesCuentaBaseIva();
+            actualizarTotales();
+        });
+    }
+
+    // Calcular y mostrar totales
+    function actualizarTotales() {
+        let totalDebe = 0;
+        let totalHaber = 0;
+        const movimientos = {};
+
+        // Recorrer todas las filas
+        const filas = tablaBody.querySelectorAll('.movimiento-row');
+        filas.forEach(fila => {
+            const cuentaSelect = fila.querySelector('.cuenta_contable');
+            const monto = parseFloat(fila.querySelector('.monto').value) || 0;
+            const esDebe = fila.querySelector('.es_debe').checked;
+            const esHaber = fila.querySelector('.es_haber').checked;
+            const cuentaId = cuentaSelect.value;
+
+            if (!cuentaId || monto <= 0) return;
+
+            const cuentaNombre = cuentaSelect.options[cuentaSelect.selectedIndex].text;
+
+            if (!movimientos[cuentaId]) {
+                movimientos[cuentaId] = {
+                    nombre: cuentaNombre,
+                    debe: 0,
+                    haber: 0
+                };
+            }
+
+            if (esDebe) {
+                totalDebe += monto;
+                movimientos[cuentaId].debe += monto;
+            }
+            if (esHaber) {
+                totalHaber += monto;
+                movimientos[cuentaId].haber += monto;
+            }
+        });
+
+        // Calcular IVA si aplica
+        let montoIva = 0;
+        if (aplicaIvaCheckbox.checked && cuentaBaseIvaSelect.value !== '' && cuentaIvaSelect.value) {
+            const indexCuentaBase = parseInt(cuentaBaseIvaSelect.value);
+            const filaCuentaBase = tablaBody.querySelector(`tr[data-index="${indexCuentaBase}"]`);
+            
+            if (filaCuentaBase) {
+                const montoBase = parseFloat(filaCuentaBase.querySelector('.monto').value) || 0;
+                montoIva = montoBase * tasaIva;
+                montoIvaInput.value = montoIva.toFixed(2);
+
+                const cuentaIvaNombre = cuentaIvaSelect.options[cuentaIvaSelect.selectedIndex].text;
+                const cuentaIvaId = cuentaIvaSelect.value;
+
+                if (!movimientos[cuentaIvaId]) {
+                    movimientos[cuentaIvaId] = {
+                        nombre: cuentaIvaNombre,
+                        debe: 0,
+                        haber: 0
+                    };
+                }
+
+                // Sumar IVA según si es debe o haber
+                if (ivaDebeRadio.checked) {
+                    totalDebe += montoIva;
+                    movimientos[cuentaIvaId].debe += montoIva;
+                } else {
+                    totalHaber += montoIva;
+                    movimientos[cuentaIvaId].haber += montoIva;
+                }
+            }
+        } else {
+            montoIvaInput.value = '0.00';
+        }
+
+        // Actualizar resumen
+        resumenBody.innerHTML = '';
+        Object.keys(movimientos).forEach(cuentaId => {
+            const mov = movimientos[cuentaId];
+            if (mov.debe > 0 || mov.haber > 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${mov.nombre}</td>
+                    <td style="text-align: right;">${mov.debe > 0 ? '$' + mov.debe.toFixed(2) : '-'}</td>
+                    <td style="text-align: right;">${mov.haber > 0 ? '$' + mov.haber.toFixed(2) : '-'}</td>
+                `;
+                resumenBody.appendChild(tr);
+            }
+        });
+
+        if (resumenBody.children.length === 0) {
+            resumenBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #b3b3b3;">Agregue partidas para ver el resumen</td></tr>';
+        }
+
+        // Actualizar totales
+        totalDebeSpan.textContent = totalDebe.toFixed(2);
+        totalHaberSpan.textContent = totalHaber.toFixed(2);
+
+        // Validar balance
+        
+        const diferencia = Math.abs(totalDebe - totalHaber);
+        
+       if (diferencia < 0.01 && totalDebe > 0) {
+           balanceStatus.textContent = '✅ Los totales cuadran.';
+           balanceStatus.className = 'balance-ok';
+           balanceStatus.style.color = '#4ade80';
+           registrarBtn.disabled = false;
+       } else {
+           balanceStatus.textContent = `❌ Los totales NO cuadran. Diferencia: $${diferencia.toFixed(2)}`;
+            balanceStatus.className = 'balance-error';
+           balanceStatus.style.color = '#ff6b6b';
+           registrarBtn.disabled = false;
+       }
+       
+            
+    }
+        
+
+    // Agregar nueva fila
+    agregarBtn.addEventListener('click', function() {
+        contadorFilas++;
+        const primeraFila = tablaBody.querySelector('.movimiento-row');
+        if (!primeraFila) return;
+        
+        const nuevaFila = primeraFila.cloneNode(true);
+        
+        // Reset valores
+        nuevaFila.querySelector('.monto').value = '0.00';
+        nuevaFila.querySelector('.tipo_estado').selectedIndex = 0;
+        nuevaFila.querySelector('.cuenta_contable').selectedIndex = 0;
+        nuevaFila.querySelector('.es_debe').checked = true;
+        nuevaFila.querySelector('.es_haber').checked = false;
+
+        tablaBody.appendChild(nuevaFila);
+        bindFilaEvents(nuevaFila, contadorFilas);
+        actualizarOpcionesCuentaBaseIva();
+        actualizarTotales();
+    });
+
+    // Mostrar/ocultar detalles IVA
+    aplicaIvaCheckbox.addEventListener('change', function() {
+        ivaDetails.style.display = this.checked ? 'block' : 'none';
+        if (!this.checked) {
+            cuentaBaseIvaSelect.value = '';
+            tipoIvaSelect.value = '';
+            cuentaIvaSelect.value = '';
+        }
+        actualizarTotales();
+    });
+
+    // Sincronizar tipo de IVA con cuenta IVA
+    tipoIvaSelect.addEventListener('change', function() {
+        const tipo = this.value;
+        if (tipo) {
+            const opciones = cuentaIvaSelect.querySelectorAll('option');
+            opciones.forEach(opcion => {
+                if (opcion.value === '') return;
+                const tipoCuenta = opcion.getAttribute('data-tipo');
+                if (tipoCuenta === tipo) {
+                    cuentaIvaSelect.value = opcion.value;
+                }
+            });
+        }
+        actualizarTotales();
+    });
+
+    cuentaBaseIvaSelect.addEventListener('change', actualizarTotales);
+    cuentaIvaSelect.addEventListener('change', actualizarTotales);
+    ivaDebeRadio.addEventListener('change', actualizarTotales);
+    ivaHaberRadio.addEventListener('change', actualizarTotales);
+
+    // Botón cancelar
+    cancelarBtn.addEventListener('click', function() {
+        if (confirm('¿Está seguro de cancelar? Se perderán los datos ingresados.')) {
+            location.reload();
+        }
+    });
+
+    // Bind inicial en la primera fila
+    const filasIniciales = tablaBody.querySelectorAll('.movimiento-row');
+    filasIniciales.forEach((fila, index) => {
+        bindFilaEvents(fila, index);
+        contadorFilas = index;
+    });
+
+    // Inicializar
+    actualizarOpcionesCuentaBaseIva();
+    actualizarTotales();
+});
+</script>
+
+{% endblock %}

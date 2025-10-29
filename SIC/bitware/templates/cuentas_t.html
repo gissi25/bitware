@@ -1,0 +1,76 @@
+<!-- templates/cuentas_t.html -->
+{% extends 'base_site.html' %}
+
+{% block title %}Cuentas T - Bitware{% endblock %}
+
+{% block content %}
+<div class="titulo-centro">
+    <h1>Cuentas T</h1>
+</div>
+
+<br>
+<hr>
+<h3>Total de cuentas: {{ cuentas_con_datos|length }}</h3>
+<br>
+<hr>
+
+<div class="cards-grid">
+    {% for item in cuentas_con_datos %}
+    <div class="card">
+        <h3>{{ item.cuenta.nombre_cuenta }} ({{ item.cuenta.codigo_cuenta }})</h3>
+
+        <div class="cuenta-t">
+            <table class="accounts-table">
+                <thead>
+                    <tr>
+                        <th>Debe</th>
+                        <th>Haber</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <!-- Columna Debe -->
+                        <td>
+                            <ul>
+                                {% for mov in item.movimientos_debe %}
+                                <li>
+                                    {{ mov.id_transaccion.descripcion }} 
+                                    ({{ mov.id_transaccion.fecha|date:"d/m/Y" }}) 
+                                    - $ {{ mov.debe }}
+                                </li>
+                                {% empty %}
+                                <li>No hay movimientos en el Debe.</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+
+                        <!-- Columna Haber -->
+                        <td>
+                            <ul>
+                                {% for mov in item.movimientos_haber %}
+                                <li>
+                                    {{ mov.id_transaccion.descripcion }} 
+                                    ({{ mov.id_transaccion.fecha|date:"d/m/Y" }}) 
+                                    - $ {{ mov.haber }}
+                                </li>
+                                {% empty %}
+                                <li>No hay movimientos en el Haber.</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+
+                    <!-- Fila de totales -->
+                    <tr class="totales-row">
+                        <td><strong>Total Debe: $ {{ item.total_debe }}</strong></td>
+                        <td><strong>Total Haber: $ {{ item.total_haber }}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+    <p>No hay cuentas registradas.</p>
+    {% endfor %}
+</div>
+{% endblock %}
