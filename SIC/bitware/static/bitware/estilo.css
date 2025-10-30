@@ -614,3 +614,41 @@ body {
     box-sizing: border-box;
     
 }
+
+/* --- ESTILOS PARA LA BARRA DE TOTALES --- */
+
+.resumen-totales {
+    display: flex; /* ¡La magia! Activa Flexbox */
+    justify-content: space-between; /* Distribuye el espacio entre los items */
+    align-items: center; /* Los centra verticalmente */
+    
+    padding: 15px 25px; /* Más espacio interior */
+    margin-top: 15px; /* Separación de la tabla */
+    
+    /* Usa los mismos colores de tu diseño */
+    background: #1a432b; 
+    border: 1px solid #3d8f61;
+    border-radius: 8px;
+}
+
+.total-label strong {
+    font-size: 1.2em;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.total-item {
+    font-size: 1.1em;
+    color: #e0e0e0; /* Un gris claro para el número */
+}
+
+.total-item strong {
+    color: #ffffff; /* Blanco para la etiqueta (MOD, CIF) */
+    font-weight: 600;
+}
+
+.total-item.total-costo {
+    font-size: 1.2em; /* Destaca el costo total */
+    font-weight: bold;
+    color: #ffffff; /* Todo en blanco */
+}

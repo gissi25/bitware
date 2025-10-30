@@ -8,5 +8,292 @@
     <h1>costeo</h1>
     <p>Contenido de transacciones aquí...</p>
 
+<<<<<<< Updated upstream
+=======
+    <br>
+
+    <div class="card">
+        <h3>Registrar Servicio</h3>
+        
+    <div class="card">
+        <h3>Registrar Servicio</h3>
+        
+        <form method="POST" id="form-registro-servicio">
+            {% csrf_token %} 
+        
+            <div class="form-row">
+                <div class="form-group">
+                    <label>N° de orden</label>
+                    <input type="text" name="orden_servicio" value="{{ proxima_orden }}" readonly id="id_orden_servicio">
+                </div>
+                
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <input type="date" name="fecha" required id="id_fecha">
+                </div>
+                
+                <div class="form-group">
+                    <label>Técnico</label>
+                    <select class="form-group select" name="id_empleado" required id="id_tecnico">
+                        <option value="">Seleccione un técnico</option>
+                        {% for tecnico in tecnicos %}
+                            <option value="{{ tecnico.id_empleado }}">{{ tecnico.nombre_completo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Actividad Realizada</label>
+                    <select class="form-group select" name="tipo_actividad" id="id_actividad">
+                        <option>Instalación</option>
+                        <option>Diagnóstico</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Horas dedicadas</label>
+                   <input type="number" placeholder="0" min="1" step="1" name="horas_dedicadas" required id="id_horas">
+                </div>
+                
+                <div class="form-group">
+                    <button type="button" id="btn-abrir-modal" class="btn btn-primary">Registrar</button>
+                </div>
+            </div>
+
+        </form> </div>
+    
+    </div>
+
+    <br>
+
+    <div class="card">
+        <h3>Servicios Registrados (Este Mes)</h3>
+        
+        <table class="accounts-table">
+            <thead>
+                <tr>
+                    <th>N° de Orden</th>
+                    <th>Fecha</th>
+                    <th>Técnico</th>
+                    <th>Actividad Realizada</th>
+                    <th>Horas dedicadas</th>
+                    <th>MOD</th>
+                    <th>CIF</th>
+                    <th>Costo Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for servicio in servicios_registrados %}
+                <tr>
+                    <td>{{ servicio.orden_servicio }}</td>
+                    <td>{{ servicio.fecha }}</td>
+                    <td>{{ servicio.id_empleado.nombre_completo }}</td>
+                    <td>{{ servicio.tipo_actividad }}</td>
+                    <td>{{ servicio.horas_dedicadas }}</td>
+                    <td>$ {{ servicio.costo_mod | floatformat:2 }}</td>
+                    <td>$ {{ servicio.costo_cif | floatformat:2 }}</td>
+                    <td>$ {{ servicio.costo_total | floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center;">No hay servicios registrados este mes.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+       <div class="resumen-totales">
+    
+    <div class="total-label">
+        <strong></strong>
+    </div>
+
+    <div class="total-item total-costo">
+        <strong>COSTO TOTAL:</strong> $ {{ totales.total_costo | floatformat:2 }}
+    </div>
+
+</div>
+    </div>
+</div>
+>>>>>>> Stashed changes
+
+<div id="modal-confirmacion" class="modal-overlay" style="display:none;">
+    <div class="modal-contenido">
+        <h4>¿Está seguro que quiere registrar el servicio N° <span id="modal-orden"></span>?</h4>
+        <br>
+        <p><strong>Técnico:</strong> <span id="modal-tecnico"></span></p>
+        <p><strong>Actividad realizada:</strong> <span id="modal-actividad"></span></p>
+        <p><strong>Horas Dedicadas:</strong> <span id="modal-horas"></span> horas</p>
+        <hr style="border-color: #4a4a4a;">
+        <p><strong>MOD:</strong> $<span id="modal-mod">0.00</span></p>
+        <p><strong>CIF:</strong> $<span id="modal-cif">0.00</span></p>
+        <h3 class="costo-total">Costo Total: $<span id="modal-total">0.00</span></h3>
+
+        <div class="modal-botones">
+            <button id="btn-cancelar-no" class="btn btn-secondary" style="background-color: #888; border: none;">no</button>
+            <button id="btn-confirmar-si" class="btn btn-primary">si</button>
+        </div>
+    </div>
+</div>
+<style>
+.modal-overlay {
+    position: fixed; /* <-- ¡ESTA ES LA MAGIA! Saca la ventana del flujo */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* Fondo oscuro semi-transparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Asegura que esté al frente */
+}
+
+.modal-contenido {
+    background: #1a432b; /* Fondo verde oscuro, como tu diseño */
+    color: #e0e0e0;
+    padding: 25px;
+    border-radius: 8px;
+    width: 400px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    border: 1px solid #3d8f61;
+}
+
+.modal-contenido h4 {
+    color: #fff;
+    margin-top: 0;
+}
+
+.modal-contenido .costo-total {
+    text-align: right;
+    color: #fff;
+    font-size: 1.2em;
+    margin-top: 15px;
+}
+
+.modal-botones {
+    display: flex;
+    justify-content: space-between; /* Botones uno al lado del otro */
+    margin-top: 25px;
+}
+
+.modal-botones button {
+    width: 48%; /* Cada botón ocupa casi la mitad */
+    font-size: 1.1em;
+}
+
+/* Estilos para tus botones (basado en la imagen) */
+.btn-primary {
+    background-color: #3d8f61;
+    border: none;
+    color: white;
+}
+.btn-secondary {
+    background-color: #888;
+    border: none;
+    color: white;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // --- 1. Seleccionar todos los elementos ---
+    const btnAbrirModal = document.getElementById('btn-abrir-modal');
+    const btnCancelar = document.getElementById('btn-cancelar-no');
+    const btnConfirmar = document.getElementById('btn-confirmar-si');
+    const modal = document.getElementById('modal-confirmacion');
+
+    // Formulario
+    const form = document.getElementById('form-registro-servicio');
+    const ordenInput = document.getElementById('id_orden_servicio');
+    const fechaInput = document.getElementById('id_fecha');
+    const tecnicoInput = document.getElementById('id_tecnico');
+    const actividadInput = document.getElementById('id_actividad');
+    const horasInput = document.getElementById('id_horas');
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    // Spans del Modal
+    const modalOrden = document.getElementById('modal-orden');
+    const modalTecnico = document.getElementById('modal-tecnico');
+    const modalActividad = document.getElementById('modal-actividad');
+    const modalHoras = document.getElementById('modal-horas');
+    const modalMod = document.getElementById('modal-mod');
+    const modalCif = document.getElementById('modal-cif');
+    const modalTotal = document.getElementById('modal-total');
+
+    // --- 2. Lógica al presionar "Registrar" ---
+    btnAbrirModal.addEventListener('click', function() {
+
+        // Validación simple
+        if (!fechaInput.value || !tecnicoInput.value || !horasInput.value || horasInput.value <= 0) {
+            alert('Por favor, complete la fecha, el técnico y las horas (mayor a 0).');
+            return;
+        }
+
+        // Preparar datos para AJAX
+        const data = {
+            id_empleado: tecnicoInput.value,
+            actividad: actividadInput.value,
+            horas: horasInput.value
+        };
+
+        // Mostrar un "cargando" simple
+        modalOrden.textContent = ordenInput.value;
+        modalTecnico.textContent = "Calculando...";
+        modal.style.display = 'flex';
+
+        // --- Llamada AJAX (Fetch) ---
+        fetch("{% url 'api_calcular_preview' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'ok') {
+                // Llenar el modal con los datos calculados
+                modalTecnico.textContent = result.tecnico_nombre;
+                modalActividad.textContent = actividadInput.value;
+                modalHoras.textContent = horasInput.value;
+                modalMod.textContent = result.mod;
+                modalCif.textContent = result.cif;
+                modalTotal.textContent = result.total;
+            } else {
+                alert('Error al calcular: ' + result.message);
+                modal.style.display = 'none'; // Ocultar si falló
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            alert('Error de conexión. Intente de nuevo.');
+            modal.style.display = 'none';
+        });
+    });
+
+    // --- 3. Lógica al presionar "no" (Cancelar) ---
+    btnCancelar.addEventListener('click', function() {
+        modal.style.display = 'none';
+
+        // Limpiar los campos como pediste
+        fechaInput.value = '';
+        tecnicoInput.value = ''; // Resetea el <select>
+        horasInput.value = 0; // O el valor que tenías por defecto
+        actividadInput.value = 'Instalación'; // Resetea a la primera opción
+    });
+
+    // --- 4. Lógica al presionar "si" (Confirmar) ---
+    btnConfirmar.addEventListener('click', function() {
+        // Ocultar modal y enviar el formulario REAL
+        modal.style.display = 'none';
+        form.submit();
+    });
+});
+</script>
 
 {% endblock %}

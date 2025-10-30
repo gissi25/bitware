@@ -23,6 +23,11 @@ from django.conf.urls.static import static
 from bitware.views.catalogo_cuentas import CatalogoCuentasView
 from bitware.views.cuentas_t import CuentasT
 from bitware.views.transacciones import transacciones
+<<<<<<< Updated upstream
+=======
+from bitware.views.costeo import CosteoABC
+from bitware.views import costeo
+>>>>>>> Stashed changes
 
 
 
@@ -32,7 +37,12 @@ urlpatterns = [
 
     # Rutas del menú
     path('transacciones/', transacciones.as_view() , name='transacciones'),
+<<<<<<< Updated upstream
     path('costeo/', views.costeo, name='costeo'),
+=======
+    path('costeo/', CosteoABC.as_view(), name='costeo_abc'),
+    path('api/calcular-preview/', costeo.calcular_preview_costo, name='api_calcular_preview'),
+>>>>>>> Stashed changes
     path('catalogo-cuentas/', CatalogoCuentasView.as_view(), name='catalogo_cuentas'),
     path('cuentas-t/', CuentasT.as_view(), name='cuentas_t'),
     path('balance-general/', views.balance_general, name='balance_general'),

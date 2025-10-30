@@ -1,6 +1,9 @@
 syntax: glob
 
 venv/
+
+SIC/settings.py
+bitware/models.py
 entorno/
 **/__pycache__/
 *.pyc
